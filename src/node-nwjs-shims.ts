@@ -24,6 +24,8 @@ interface Config {
 
 export function nodeNwjsShims(config: Config) {
     window.global = window
+    window.__filename = 'file.js'
+    window.__dirname = '/'
 
     requireFix(config)
     if (config.enableNw) nwShim(config)
