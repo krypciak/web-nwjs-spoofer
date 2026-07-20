@@ -512,6 +512,9 @@ export const fs = {
 
     rmdir: wrapAsync(rmdir),
     cp: wrapAsync(cp),
+    realpathSync: {
+        native: (path: string) => path,
+    },
 
     fileCount() {
         return pathToFileHandle.size
