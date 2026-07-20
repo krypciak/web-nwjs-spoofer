@@ -146,7 +146,6 @@ function requireFix({ fs, enableGreenworks }: Config) {
         crypto: crypto,
         stream: stream,
         util: util,
-        'nw.gui': window.nw,
         events: events,
         assert: assert,
         module: module,
@@ -158,6 +157,7 @@ function requireFix({ fs, enableGreenworks }: Config) {
         if (fromMap) return fromMap
 
         if (enableGreenworks && src.includes('greenworks')) return greenworks
+        if (src == 'nw.gui') return window.nw
 
         console.groupCollapsed(`requireFix: unknown module: ${src}`)
         console.trace()
