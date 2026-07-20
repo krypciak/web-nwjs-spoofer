@@ -72,6 +72,7 @@ function processShim() {
         nextTick(callback: Function, ...args: any[]) {
             queueMicrotask(() => callback(...args))
         },
+        argv: ['/usr/bin/node'],
     } as any
 }
 
