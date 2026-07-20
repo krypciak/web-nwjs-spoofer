@@ -1,4 +1,11 @@
-import type { Dirent, MakeDirectoryOptions, ObjectEncodingOptions, RmOptions, StatOptions, Stats } from 'fs'
+import type {
+    Dirent,
+    MakeDirectoryOptions,
+    ObjectEncodingOptions,
+    RmOptions,
+    StatOptions,
+    Stats,
+} from 'fs'
 
 import { dirname, basename } from 'path-browserify'
 import { OpfsDirent, OpfsStats, constants, throttleTasks } from './fs-misc'
@@ -6,9 +13,14 @@ import { getUint8Array, throwErrorWithCode } from './utils'
 
 let fsRoot: FileSystemDirectoryHandle
 
-export async function init(updateStorageInfoLabel: (mountedCount?: number) => unknown) {
+interface InitConfig {
+    updateStorageInfoLabel?: (mountedCount?: number) => unknown
+    mustLoadFiles?: Set<string>
+}
+
+export async function init(config: InitConfig) {
     fsRoot = await navigator.storage.getDirectory()
-    await buildQuickPathLookupMap(updateStorageInfoLabel)
+    await buildQuickPathLookupMap(config)
 
     await navigator.storage.persist?.()
 }
@@ -16,20 +28,10 @@ export async function init(updateStorageInfoLabel: (mountedCount?: number) => un
 const pathToFileHandle: Map<string, FileSystemFileHandle> = new Map()
 const pathToDirHandle: Map<string, FileSystemDirectoryHandle> = new Map()
 
-const mustLoadFiles: Set<string> = new Set([
-    'ccloader3/metadata.json',
-    'ccloader-user-config.js',
-    'assets/extension/readme.txt',
-    'assets/extension/fish-gear/fish-gear.json',
-    'assets/extension/flying-hedgehag/flying-hedgehag.json',
-    'assets/extension/manlea/manlea.json',
-    'assets/extension/ninja-skin/ninja-skin.json',
-    'assets/extension/post-game/post-game.json',
-    'assets/extension/scorpion-robo/scorpion-robo.json',
-    'assets/extension/snowman-tank/snowman-tank.json',
-])
-
-async function buildQuickPathLookupMap(updateStorageInfoLabel: (mountedCount?: number) => unknown) {
+async function buildQuickPathLookupMap({
+    updateStorageInfoLabel,
+    mustLoadFiles = new Set(),
+}: InitConfig) {
     pathToFileHandle.clear()
     pathToDirHandle.clear()
 
@@ -41,7 +43,7 @@ async function buildQuickPathLookupMap(updateStorageInfoLabel: (mountedCount?: n
         },
         (dir, path) => {
             pathToDirHandle.set(path, dir)
-            updateStorageInfoLabel(pathToFileHandle.size + pathToDirHandle.size)
+            updateStorageInfoLabel?.(pathToFileHandle.size + pathToDirHandle.size)
         },
         path => mustLoadFiles.has(path)
     )
@@ -181,7 +183,9 @@ async function readFile(
 
     const file = await handle.getFile()
 
-    const encoding = !options ? undefined : ((typeof options == 'string' ? options : options?.encoding) ?? 'binary')
+    const encoding = !options
+        ? undefined
+        : ((typeof options == 'string' ? options : options?.encoding) ?? 'binary')
 
     if (encoding == 'utf-8' || encoding == 'utf8') {
         return file.text()
@@ -334,14 +338,16 @@ async function mkdir(path: string, options?: MakeDirectoryOptions | null): Promi
 
         return firstCreated
     } else {
-        if (getDirHandle(path)) throwErrorWithCode(`opfs: directory already exists: ${path}`, 'EEXIST')
+        if (getDirHandle(path))
+            throwErrorWithCode(`opfs: directory already exists: ${path}`, 'EEXIST')
 
         await touchDir(path)
     }
 }
 
 async function access(path: string, _mode?: number): Promise<void> {
-    if (!(await exists(path))) throwErrorWithCode(`opfs: access error (file doesn't exist): ${path}`, 'ENOENT')
+    if (!(await exists(path)))
+        throwErrorWithCode(`opfs: access error (file doesn't exist): ${path}`, 'ENOENT')
     return
 }
 
@@ -382,7 +388,10 @@ async function rm(path: string, options?: RmOptions): Promise<void> {
 
     if (handle.kind == 'directory' && !recursive) {
         if ((await Array.fromAsync(handle.keys())).length > 0) {
-            throwErrorWithCode(`opfs: cannot remove non empty directory without recursive: ${path}`, 'ENOTEMPTY')
+            throwErrorWithCode(
+                `opfs: cannot remove non empty directory without recursive: ${path}`,
+                'ENOTEMPTY'
+            )
         }
     }
     await removeFileOrDirectory(path, handle)
@@ -416,12 +425,15 @@ async function cp(srcPath: string, destPath: string, options?: { recursive?: boo
         await writeFile(destPath, data)
     } else {
         if (!recursive)
-            throwErrorWithCode(`opfs: cannot cp a directory: ${srcPath} without the recursive flag`, 'ENOTEMPTY')
+            throwErrorWithCode(
+                `opfs: cannot cp a directory: ${srcPath} without the recursive flag`,
+                'ENOTEMPTY'
+            )
 
         const dirents = await readdir(srcPath, { recursive: true, withFileTypes: true })
-        const dirs = [...new Set(dirents.map(d => d.parentPath).filter(path => path != '.'))].toSorted(
-            (a, b) => a.length - b.length
-        )
+        const dirs = [
+            ...new Set(dirents.map(d => d.parentPath).filter(path => path != '.')),
+        ].toSorted((a, b) => a.length - b.length)
 
         await mkdir(destPath)
         for (const dirPath of dirs) {
@@ -429,7 +441,9 @@ async function cp(srcPath: string, destPath: string, options?: { recursive?: boo
         }
 
         const files = dirents.filter(d => d.isFile()).map(d => d.parentPath + '/' + d.name)
-        await throttleTasks(files, filePath => cp(srcPath + '/' + filePath, destPath + '/' + filePath))
+        await throttleTasks(files, filePath =>
+            cp(srcPath + '/' + filePath, destPath + '/' + filePath)
+        )
     }
 }
 
@@ -441,8 +455,15 @@ async function rename(srcPath: string, destPath: string): Promise<void> {
 function wrapAsync<D, CB = (err: Error | null, data: D | null) => void>(
     func: (path: string, options?: any) => Promise<D>
 ) {
-    return async (path: string, optionsOrCb: unknown | CB, cb?: (err: Error | null, data: D | null) => void) => {
-        const callback = (typeof optionsOrCb == 'function' ? optionsOrCb : cb) as (a: unknown, b: unknown) => void
+    return async (
+        path: string,
+        optionsOrCb: unknown | CB,
+        cb?: (err: Error | null, data: D | null) => void
+    ) => {
+        const callback = (typeof optionsOrCb == 'function' ? optionsOrCb : cb) as (
+            a: unknown,
+            b: unknown
+        ) => void
         const options = typeof optionsOrCb == 'function' ? undefined : (optionsOrCb as any)
         func(path, options)
             .then(data => callback(null, data))
