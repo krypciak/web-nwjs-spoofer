@@ -65,6 +65,9 @@ function processShim() {
             return '/'
         },
         _events: {},
+        nextTick(callback: Function, ...args: any[]) {
+            queueMicrotask(() => callback(...args))
+        },
     } as any
 }
 
