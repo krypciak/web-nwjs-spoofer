@@ -6,6 +6,7 @@ import util from '@jspm/core/nodelibs/util'
 
 // @ts-expect-error
 import assert from '@jspm/core/nodelibs/assert'
+assert.default = assert
 
 // @ts-expect-error
 import events from '@jspm/core/nodelibs/events'
