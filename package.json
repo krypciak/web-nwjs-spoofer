@@ -1,0 +1,19 @@
+{
+    "name": "web-nwjs-spoofer",
+    "version": "1.0.0",
+    "module": "index.ts",
+    "type": "module",
+    "devDependencies": {
+        "@types/bun": "latest"
+    },
+    "dependencies": {
+        "@jspm/core": "^2.1.0",
+        "@types/chrome": "^0.2.2",
+        "@types/node": "^26.1.1",
+        "@types/nw.js": "^0.92.0",
+        "@types/path-browserify": "^1.0.3",
+        "fflate": "^0.8.3",
+        "path-browserify": "^1.0.1",
+        "typescript": "^7.0.2"
+    }
+}
