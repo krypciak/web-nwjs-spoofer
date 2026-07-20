@@ -1,6 +1,8 @@
 import path from 'path-browserify'
 export { path }
 
+import * as os from './os-shim'
+
 // @ts-expect-error
 import util from '@jspm/core/nodelibs/util'
 
@@ -153,6 +155,7 @@ function requireFix({ fs, enableGreenworks }: Config) {
         events: events,
         assert: assert,
         module: module,
+        os: os,
     }
 
     // @ts-expect-error
