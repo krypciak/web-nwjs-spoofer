@@ -12,6 +12,8 @@ assert.default = assert
 
 // @ts-expect-error
 import events from '@jspm/core/nodelibs/events'
+import { processShim } from './process-shim'
+import { chromeShim } from './chrome-shim'
 
 interface Config {
     fs: typeof import('fs')
@@ -32,48 +34,6 @@ export function nodeNwjsShims(config: Config) {
 
     processShim()
     chromeShim()
-}
-
-function chromeShim() {
-    window.chrome ??= {} as any
-    window.chrome.runtime = {
-        reload() {
-            location.reload()
-        },
-    } as any
-}
-
-function processShim() {
-    window.process = {
-        on(name: string, _func: () => void) {
-            if (name == 'on') {
-            } else if (name == 'exit') {
-            } else {
-                console.warn('Unsupported process.on:', name)
-            }
-        },
-        off(name: string, _func: () => void) {
-            if (name == 'on') {
-            } else if (name == 'exit') {
-            } else {
-                console.warn('Unsupported process.on:', name)
-            }
-        },
-        execPath: 'client',
-        versions: {
-            nw: '100.0.0',
-            'node-webkit': '100.0.0',
-        },
-        env: {},
-        cwd() {
-            return '/'
-        },
-        _events: {},
-        nextTick(callback: Function, ...args: any[]) {
-            queueMicrotask(() => callback(...args))
-        },
-        argv: ['/usr/bin/node'],
-    } as any
 }
 
 function nwShim({ exit }: Config) {
