@@ -61,6 +61,10 @@ export class OpfsStats extends DirentBase implements Stats {
     mtime = 0 as any
     ctime = 0 as any
     birthtime = 0 as any
+    atimeInstant = 0 as any
+    mtimeInstant = 0 as any
+    ctimeInstant = 0 as any
+    birthtimeInstant = 0 as any
 }
 
 export const constants = {
